@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0d1b2a">
+    <meta name="description" content="ChatApp - Aplicación de mensajería moderna">
+    <title>ChatApp</title>
+    
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkNoYXRBcHAiLAogICJzaG9ydF9uYW1lIjogIkNoYXRBcHAiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzBkMWIyYSIsCiAgInRoZW1lX2NvbG9yIjogIiMwZDFiMmEiCn0=">
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --gradient-start: #0d1b2a;
+            --gradient-mid: #1b4965;
+            --gradient-end: #62b6cb;
+            --accent-glow: #00d4ff;
+            --accent-blue: #4fc3f7;
+            --white: #ffffff;
+            --white-70: rgba(255, 255, 255, 0.7);
+            --white-50: rgba(255, 255, 255, 0.5);
+            --white-30: rgba(255, 255, 255, 0.3);
+            --white-10: rgba(255, 255, 255, 0.1);
+            --white-05: rgba(255, 255, 255, 0.05);
+            --success: #4caf50;
+            --error: #ff5252;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .app-container {
+            width: 100%;
+            height: 100%;
+            max-width: 430px;
+            margin: 0 auto;
+            position: relative;
+            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-mid) 50%, var(--gradient-end) 100%);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Screen Management */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            animation: screenSlideIn 0.4s ease-out;
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: flex;
+            z-index: 10;
+        }
+
+        @keyframes screenSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Common Styles */
+        .bg-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--white-10);
+            border-radius: 50%;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        .particle:nth-child(1) { width: 50px; height: 50px; left: 15%; top: 20%; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 70px; height: 70px; left: 70%; top: 40%; animation-delay: 1s; }
+        .particle:nth-child(3) { width: 40px; height: 40px; left: 25%; top: 60%; animation-delay: 2s; }
+        .particle:nth-child(4) { width: 60px; height: 60px; left: 60%; top: 70%; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-20px) scale(1.1); opacity: 0.5; }
+        }
+
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 15px 20px;
+            background: rgba(13, 27, 42, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+        }
+
+        .back-btn, .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            flex-shrink: 0;
+        }
+
+        .back-btn:hover, .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .back-btn .material-icons, .icon-btn .material-icons {
+            font-size: 24px;
+            color: var(--white);
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: relative;
+            z-index: 20;
+            background: rgba(13, 27, 42, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 10px 20px;
+            border-top: 1px solid var(--white-05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: none;
+            background: none;
+        }
+
+        .nav-item.active {
+            background: rgba(79, 195, 247, 0.2);
+        }
+
+        .nav-item.active .nav-icon, .nav-item.active .nav-label {
+            color: var(--accent-glow);
+        }
+
+        .nav-icon {
+            font-size: 26px;
+            color: var(--white-50);
+            transition: color 0.3s ease;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            color: var(--white-50);
+            transition: color 0.3s ease;
+        }
+
+        /* Loader Screen */
+        #screen-loader .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon {
+            width: 140px;
+            height: 140px;
+            border-radius: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 50px rgba(0, 212, 255, 0.3);
+            margin-bottom: 30px;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo-icon .material-icons {
+            font-size: 70px;
+            color: var(--white);
+        }
+
+        .app-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--white);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .loading-bar {
+            width: 200px;
+            height: 4px;
+            background: var(--white-10);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-glow));
+            border-radius: 2px;
+            animation: loadProgress 2s ease-in-out forwards;
+        }
+
+        @keyframes loadProgress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* Login Screen */
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 5px;
+        }
+
+        .input-wrapper .material-icons {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--white-50);
+            font-size: 20px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px 16px 16px 48px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-blue);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .input-field::placeholder {
+            color: var(--white-50);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-glow));
+            border: none;
+            border-radius: 12px;
+            color: var(--white);
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-text {
+            background: none;
+            border: none;
+            color: var(--white-70);
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 15px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .btn-text span {
+            color: var(--accent-blue);
+            font-weight: 500;
+        }
+
+        /* Home Screen */
+        .home-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar .material-icons {
+            font-size: 24px;
+            color: var(--white);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .empty-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .empty-icon .material-icons {
+            font-size: 60px;
+            color: var(--accent-blue);
+        }
+
+        .empty-state h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+            color: var(--white-70);
+            max-width: 280px;
+        }
+
+        .fab {
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+            z-index: 15;
+            border: none;
+        }
+
+        .fab .material-icons {
+            font-size: 28px;
+            color: var(--white);
+        }
+
+        /* Chat Screen */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .online-dot {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            border: 2px solid var(--gradient-start);
+        }
+
+        .chat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-name {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--white);
+        }
+
+        .chat-status {
+            font-size: 13px;
+            color: var(--success);
+        }
+
+        .messages-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .message-bubble.received {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-bubble.sent {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            color: var(--white);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: var(--white-50);
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .chat-input-container {
+            padding: 15px 20px;
+            background: rgba(13, 27, 42, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            color: var(--white);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: var(--accent-glow);
+        }
+
+        .chat-input::placeholder {
+            color: var(--white-50);
+        }
+
+        .send-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border: none;
+            flex-shrink: 0;
+        }
+
+        .send-btn .material-icons {
+            font-size: 22px;
+            color: var(--white);
+        }
+
+        /* Settings Screen */
+        .settings-list {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .settings-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid var(--white-05);
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .settings-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: rgba(79, 195, 247, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .settings-icon .material-icons {
+            font-size: 24px;
+            color: var(--accent-glow);
+        }
+
+        .settings-info {
+            flex: 1;
+        }
+
+        .settings-label {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--white);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 30px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-glow));
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-switch.active::after {
+            left: 25px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            font-size: 11px;
+            color: var(--white-30);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            z-index: 25;
+        }
+
+        .footer .material-icons {
+            font-size: 14px;
+            color: var(--accent-glow);
+        }
+
+        /* Safe area for iOS */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .bottom-nav {
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            }
+            .footer {
+                bottom: calc(15px + env(safe-area-inset-bottom));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Background -->
+        <div class="bg-particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+
+        <!-- Screen: Loader -->
+        <div id="screen-loader" class="screen active">
+            <div class="content">
+                <div class="logo-icon">
+                    <i class="material-icons">question_answer</i>
+                </div>
+                <h1 class="app-title">ChatApp</h1>
+                <div class="loading-bar">
+                    <div class="loading-bar-fill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Screen: Login -->
+        <div id="screen-login" class="screen">
+            <div class="content" style="justify-content: center;">
+                <h1 style="font-family: 'Poppins'; font-size: 32px; font-weight: 700; color: white; margin-bottom: 30px; text-align: center;">Welcome Back</h1>
+                
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="material-icons">email</i>
+                        <input type="email" class="input-field" placeholder="Email address">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="material-icons">lock</i>
+                        <input type="password" class="input-field" placeholder="Password">
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="navigateTo('screen-home')">Sign In</button>
+
+                <div style="text-align: center; margin: 20px 0; color: var(--white-50);">OR</div>
+
+                <button class="btn-primary" style="background: linear-gradient(90deg, #833ab4, #fd1d1d, #fcb045);">Continue with Instagram</button>
+
+                <button class="btn-text" onclick="navigateTo('screen-register')">
+                    Don't have an account? <span>Register</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen: Register -->
+        <div id="screen-register" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('screen-login')">
+                    <i class="material-icons">arrow_back</i>
+                </button>
+                <h1>Register</h1>
+            </div>
+            <div class="content" style="justify-content: center;">
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="material-icons">person</i>
+                        <input type="text" class="input-field" placeholder="Full name">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="material-icons">email</i>
+                        <input type="email" class="input-field" placeholder="Email address">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div class="input-wrapper">
+                        <i class="material-icons">lock</i>
+                        <input type="password" class="input-field" placeholder="Password">
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="navigateTo('screen-loading')">Create Account</button>
+
+                <button class="btn-text" onclick="navigateTo('screen-login')">
+                    Already have an account? <span>Sign In</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen: Loading -->
+        <div id="screen-loading" class="screen">
+            <div class="content" style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="width: 180px; height: 180px; border-radius: 50%; border: 3px solid var(--accent-glow); border-top-color: transparent; border-right-color: transparent; animation: spin 1.5s linear infinite; margin-bottom: 30px; position: relative;">
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 160px; height: 160px; border-radius: 50%; background: rgba(0, 0, 0, 0.8); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <i class="material-icons" style="font-size: 50px; color: var(--accent-glow);">space_dashboard</i>
+                        <div style="color: white; font-family: 'Poppins'; font-size: 16px; margin-top: 15px; text-align: center;">Cargando tu espacio...</div>
+                    </div>
+                </div>
+                <div style="color: var(--white-50); font-size: 14px;">Preparando tu experiencia</div>
+            </div>
+        </div>
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        <!-- Screen: Home -->
+        <div id="screen-home" class="screen">
+            <div class="header">
+                <div class="home-header" style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="avatar">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <div>
+                            <h1 style="font-size: 22px;">Messages</h1>
+                            <p style="font-size: 13px; color: var(--white-70);">No tienes mensajes aún.</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="icon-btn">
+                            <i class="material-icons">search</i>
+                        </button>
+                        <button class="icon-btn">
+                            <i class="material-icons">more_vert</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="content">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="material-icons">share</i>
+                    </div>
+                    <h3>¡Empieza a conversar!</h3>
+                    <p>No tienes mensajes aún. Comienza una nueva conversación.</p>
+                </div>
+            </div>
+            <button class="fab" onclick="navigateTo('screen-chat')">
+                <i class="material-icons">chat</i>
+            </button>
+            <div class="bottom-nav">
+                <button class="nav-item active" onclick="switchTab(this, 'screen-home')">
+                    <i class="material-icons nav-icon">chat_bubble</i>
+                    <span class="nav-label">Messages</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-calls')">
+                    <i class="material-icons nav-icon">phone</i>
+                    <span class="nav-label">Calls</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-status')">
+                    <i class="material-icons nav-icon">photo_camera</i>
+                    <span class="nav-label">Status</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-settings')">
+                    <i class="material-icons nav-icon">settings</i>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Chat -->
+        <div id="screen-chat" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('screen-home')">
+                    <i class="material-icons">arrow_back</i>
+                </button>
+                <div class="chat-header-left" style="flex: 1;">
+                    <div class="chat-avatar">
+                        <i class="material-icons">person</i>
+                        <div class="online-dot"></div>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-name">Sarah K.</div>
+                        <div class="chat-status">Online</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="icon-btn">
+                        <i class="material-icons">phone</i>
+                    </button>
+                    <button class="icon-btn">
+                        <i class="material-icons">videocam</i>
+                    </button>
+                </div>
+            </div>
+            <div class="messages-list">
+                <div class="message-bubble received">
+                    <div>¡Hola! ¿Cómo estás? 😊</div>
+                    <div class="message-time">10:30 AM</div>
+                </div>
+                <div class="message-bubble sent">
+                    <div>¡Hey! Todo bien, gracias</div>
+                    <div class="message-time">10:32 AM</div>
+                </div>
+                <div class="message-bubble received">
+                    <div>Perfecto! ¿Quieres tomar un café? ☕</div>
+                    <div class="message-time">10:33 AM</div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" placeholder="Type a message..." id="chatInput">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="material-icons">send</i>
+                </button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Calls -->
+        <div id="screen-calls" class="screen">
+            <div class="header">
+                <h1>Calls</h1>
+            </div>
+            <div class="content">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="material-icons">phone</i>
+                    </div>
+                    <h3>Sin llamadas</h3>
+                    <p>No tienes llamadas recientes.</p>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <button class="nav-item" onclick="switchTab(this, 'screen-home')">
+                    <i class="material-icons nav-icon">chat_bubble</i>
+                    <span class="nav-label">Messages</span>
+                </button>
+                <button class="nav-item active" onclick="switchTab(this, 'screen-calls')">
+                    <i class="material-icons nav-icon">phone</i>
+                    <span class="nav-label">Calls</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-status')">
+                    <i class="material-icons nav-icon">photo_camera</i>
+                    <span class="nav-label">Status</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-settings')">
+                    <i class="material-icons nav-icon">settings</i>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Status -->
+        <div id="screen-status" class="screen">
+            <div class="header">
+                <h1>Status</h1>
+            </div>
+            <div class="content">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="material-icons">visibility_off</i>
+                    </div>
+                    <h3>No new stories</h3>
+                    <p>Cuando amigos publiquen stories, aparecerán aquí.</p>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <button class="nav-item" onclick="switchTab(this, 'screen-home')">
+                    <i class="material-icons nav-icon">chat_bubble</i>
+                    <span class="nav-label">Messages</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-calls')">
+                    <i class="material-icons nav-icon">phone</i>
+                    <span class="nav-label">Calls</span>
+                </button>
+                <button class="nav-item active" onclick="switchTab(this, 'screen-status')">
+                    <i class="material-icons nav-icon">photo_camera</i>
+                    <span class="nav-label">Status</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-settings')">
+                    <i class="material-icons nav-icon">settings</i>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Settings -->
+        <div id="screen-settings" class="screen">
+            <div class="header">
+                <h1>Settings</h1>
+            </div>
+            <div class="content">
+                <div style="background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 24px; margin-bottom: 24px; display: flex; align-items: center; gap: 20px;">
+                    <div class="avatar" style="width: 70px; height: 70px;">
+                        <i class="material-icons" style="font-size: 36px;">person</i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-family: 'Poppins'; font-size: 22px; font-weight: 600; color: white;">John Doe</div>
+                        <div style="font-size: 15px; color: var(--white-70);">@john_doe</div>
+                    </div>
+                    <button style="padding: 10px 20px; background: linear-gradient(90deg, var(--accent-blue), var(--accent-glow)); border: none; border-radius: 20px; color: white; font-weight: 600; cursor: pointer;" onclick="navigateTo('screen-edit-profile')">Edit</button>
+                </div>
+
+                <div class="settings-list">
+                    <div class="settings-item" onclick="navigateTo('screen-edit-profile')">
+                        <div class="settings-icon">
+                            <i class="material-icons">account_circle</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Profile</div>
+                        </div>
+                        <i class="material-icons" style="color: var(--white-30);">chevron_right</i>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">lock</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Privacy</div>
+                        </div>
+                        <i class="material-icons" style="color: var(--white-30);">chevron_right</i>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">notifications</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Notifications</div>
+                        </div>
+                        <i class="material-icons" style="color: var(--white-30);">chevron_right</i>
+                    </div>
+                    <div class="settings-item" onclick="navigateTo('screen-media')">
+                        <div class="settings-icon">
+                            <i class="material-icons">storage</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Media & Storage</div>
+                        </div>
+                        <i class="material-icons" style="color: var(--white-30);">chevron_right</i>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">dark_mode</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Dark Mode</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                </div>
+
+                <div class="settings-list">
+                    <div class="settings-item" onclick="navigateTo('screen-login')" style="border-bottom: none;">
+                        <div class="settings-icon" style="background: rgba(255, 82, 82, 0.2);">
+                            <i class="material-icons" style="color: var(--error);">logout</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label" style="color: var(--error);">Log Out</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-nav">
+                <button class="nav-item" onclick="switchTab(this, 'screen-home')">
+                    <i class="material-icons nav-icon">chat_bubble</i>
+                    <span class="nav-label">Messages</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-calls')">
+                    <i class="material-icons nav-icon">phone</i>
+                    <span class="nav-label">Calls</span>
+                </button>
+                <button class="nav-item" onclick="switchTab(this, 'screen-status')">
+                    <i class="material-icons nav-icon">photo_camera</i>
+                    <span class="nav-label">Status</span>
+                </button>
+                <button class="nav-item active" onclick="switchTab(this, 'screen-settings')">
+                    <i class="material-icons nav-icon">settings</i>
+                    <span class="nav-label">Settings</span>
+                </button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Edit Profile -->
+        <div id="screen-edit-profile" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('screen-settings')">
+                    <i class="material-icons">arrow_back</i>
+                </button>
+                <h1>Edit Profile</h1>
+            </div>
+            <div class="content" style="display: flex; flex-direction: column; align-items: center; padding-top: 40px;">
+                <div style="width: 130px; height: 130px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-blue), var(--accent-glow)); display: flex; justify-content: center; align-items: center; margin-bottom: 40px; position: relative;">
+                    <i class="material-icons" style="font-size: 70px; color: white;">person</i>
+                    <div style="position: absolute; bottom: 10px; right: 10px; width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-glow)); display: flex; justify-content: center; align-items: center; border: 3px solid var(--gradient-start);">
+                        <i class="material-icons" style="font-size: 24px; color: white;">camera_alt</i>
+                    </div>
+                </div>
+
+                <div style="width: 100%; margin-bottom: 20px;">
+                    <label style="display: block; font-family: 'Poppins'; font-size: 14px; color: var(--white-70); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Username</label>
+                    <input type="text" class="input-field" value="yournamehere" style="padding-left: 20px;">
+                </div>
+
+                <div style="width: 100%; margin-bottom: 30px;">
+                    <label style="display: block; font-family: 'Poppins'; font-size: 14px; color: var(--white-70); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Bio</label>
+                    <textarea class="input-field" placeholder="Tell us about yourself..." style="padding-left: 20px; min-height: 120px; resize: vertical;"></textarea>
+                </div>
+
+                <button class="btn-primary" onclick="navigateTo('screen-settings')">SAVE</button>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+
+        <!-- Screen: Media Settings -->
+        <div id="screen-media" class="screen">
+            <div class="header">
+                <button class="back-btn" onclick="navigateTo('screen-settings')">
+                    <i class="material-icons">arrow_back</i>
+                </button>
+                <h1>Media Settings</h1>
+            </div>
+            <div class="content">
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">photo</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Image Quality</div>
+                            <div style="font-size: 13px; color: var(--accent-glow);">High</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">videocam</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Video Quality</div>
+                            <div style="font-size: 13px; color: var(--accent-glow);">High</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="settings-icon">
+                            <i class="material-icons">download</i>
+                        </div>
+                        <div class="settings-info">
+                            <div class="settings-label">Auto-Download Media</div>
+                        </div>
+                        <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <i class="material-icons">auto_awesome</i>
+                <span>Meta AI</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation System
+        let currentScreen = 'screen-loader';
+        let history = ['screen-loader'];
+
+        function navigateTo(screenId) {
+            if (currentScreen === screenId) return;
+            
+            // Remove active class from current screen
+            const currentElement = document.getElementById(currentScreen);
+            if (currentElement) {
+                currentElement.classList.remove('active');
+            }
+
+            // Add screen to history
+            history.push(screenId);
+            currentScreen = screenId;
+
+            // Show new screen
+            const newScreen = document.getElementById(screenId);
+            if (newScreen) {
+                newScreen.classList.add('active');
+            }
+        }
+
+        function goBack() {
+            if (history.length > 1) {
+                history.pop(); // Remove current screen
+                const previousScreen = history[history.length - 1];
+                navigateTo(previousScreen);
+            }
+        }
+
+        function switchTab(element, screenId) {
+            // Update nav items
+            const navItems = element.parentElement.querySelectorAll('.nav-item');
+            navItems.forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            // Navigate to screen
+            navigateTo(screenId);
+        }
+
+        // Chat Functionality
+        function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (message) {
+                const messagesList = document.querySelector('.messages-list');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message-bubble sent';
+                
+                const now = new Date();
+                const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                
+                messageDiv.innerHTML = `
+                    <div>${message}</div>
+                    <div class="message-time">${time}</div>
+                `;
+                
+                messagesList.appendChild(messageDiv);
+                messagesList.scrollTop = messagesList.scrollHeight;
+                input.value = '';
+
+                // Simulate reply
+                setTimeout(() => {
+                    const replyDiv = document.createElement('div');
+                    replyDiv.className = 'message-bubble received';
+                    const replies = ['¡Genial! 😊', 'Eso suena increíble!', 'Estoy de acuerdo', '¡Claro que sí!', 'Perfecto ✨'];
+                    const reply = replies[Math.floor(Math.random() * replies.length)];
+                    
+                    replyDiv.innerHTML = `
+                        <div>${reply}</div>
+                        <div class="message-time">${time}</div>
+                    `;
+                    
+                    messagesList.appendChild(replyDiv);
+                    messagesList.scrollTop = messagesList.scrollHeight;
+                }, 1500);
+            }
+        }
+
+        // Handle Enter key for chat
+        document.getElementById('chatInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-navigation from loader
+        setTimeout(() => {
+            navigateTo('screen-login');
+        }, 2500);
+    </script>
+</body>
+</html>
